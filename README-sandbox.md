@@ -111,9 +111,28 @@ PYTHON=python3.12 bash deploy/bootstrap.sh   # force 3.12; else it auto-picks 3.
 ```
 
 `deploy/bootstrap.sh` uses a supported Python (3.12 or 3.14), installs `passivbot[full]` plus test
-deps into `.venv`, probes exchange reachability, and runs the two comparison windows on a small
-coin basket (override with `COINS=`, `BULL_START=`, `BEAR_START=`, ...). It never runs
-`passivbot live`.
+deps into `.venv`, probes exchange reachability (with retries), and runs the two comparison windows
+on a small coin basket. Overridable: `COINS=`, `BULL_START=`/`BULL_END=`, `BEAR_START=`/`BEAR_END=`,
+`CONFIG=`, `PYTHON=`. It never runs `passivbot live`, and it **flags any run whose dataset was
+synthetically filled** (`synthetic_filled` / "valid data ends before requested end") so a
+bogus result can't pass silently.
+
+**Flaky / geo-blocked networks.** On a network that truncates large downloads (github packs,
+`static.rust-lang.org`, direct pypi), the script defaults to mirrors: rustup + crates from
+`https://rsproxy.cn`, pip from the Tsinghua mirror, and it will install rustup itself if absent.
+Disable with `NO_MIRRORS=1`; override with `RUST_MIRROR=` / `PIP_INDEX_URL=`.
+
+**Moving the tree between OSes.** `git clone` can fail with `unexpected disconnect` / `early EOF`
+on those networks; transferring the working tree over the LAN with `tar` is more reliable — but
+macOS `tar` writes AppleDouble `._*` sidecars (which break `*.py` parsing). Either way:
+
+```bash
+# from the source machine (macOS), strip AppleDouble + let the script self-heal
+COPYFILE_DISABLE=1 tar -cf - --exclude=.venv --exclude=caches --exclude=backtests passivbot \
+  | ssh <target> 'mkdir -p ~/passivbot && tar -C ~/passivbot --strip-components=1 -xf -'
+```
+
+`bootstrap.sh` also deletes any `._*` / `.DS_Store` it finds (skip with `CLEAN_MAC_METADATA=0`).
 
 ## Boundaries
 
