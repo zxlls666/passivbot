@@ -23,20 +23,31 @@ BEAR_START="${BEAR_START:-2022-01-01}"; BEAR_END="${BEAR_END:-2022-06-30}"
 CONFIG="${CONFIG:-configs/examples/default_trailing_martingale_long.json}"
 
 # --- 1. Python (3.12 or 3.14; 3.13 is NOT supported by pinned deps) -----------
-PY=""
-for c in python3.12 python3.14 python3; do
-  command -v "$c" >/dev/null 2>&1 || continue
-  v="$("$c" -c 'import sys;print("%d.%d"%sys.version_info[:2])' 2>/dev/null || echo "?")"
+# Force a specific interpreter with:  PYTHON=python3.12 bash deploy/bootstrap.sh
+_ver() { "$1" -c 'import sys;print("%d.%d"%sys.version_info[:2])' 2>/dev/null || echo "?"; }
+PY="${PYTHON:-}"
+if [ -n "$PY" ]; then
+  command -v "$PY" >/dev/null 2>&1 || { echo "[bootstrap] ERROR: PYTHON=$PY not found" >&2; exit 1; }
+  v="$(_ver "$PY")"
   case "$v" in
-    3.12|3.14) PY="$c"; break ;;
-    3.13) echo "[bootstrap] $c is $v (unsupported), skipping" ;;
-    *)   echo "[bootstrap] $c is $v, skipping" ;;
+    3.12|3.14) ;;
+    *) echo "[bootstrap] ERROR: PYTHON=$PY is $v; need 3.12 or 3.14 (3.13 unsupported)" >&2; exit 1 ;;
   esac
-done
-if [ -z "$PY" ]; then
-  echo "[bootstrap] ERROR: need Python 3.12 or 3.14 (3.13 unsupported)." >&2
-  echo "[bootstrap]        Arch/omarchy tip: use uv -> 'uv python install 3.12' or pyenv." >&2
-  exit 1
+else
+  for c in python3.12 python3.14 python3; do
+    command -v "$c" >/dev/null 2>&1 || continue
+    v="$(_ver "$c")"
+    case "$v" in
+      3.12|3.14) PY="$c"; break ;;
+      3.13) echo "[bootstrap] $c is $v (unsupported), skipping" ;;
+      *)   echo "[bootstrap] $c is $v, skipping" ;;
+    esac
+  done
+  if [ -z "$PY" ]; then
+    echo "[bootstrap] ERROR: need Python 3.12 or 3.14 (3.13 unsupported)." >&2
+    echo "[bootstrap]        Arch/omarchy tip: 'uv python install 3.12', then rerun with PYTHON=python3.12." >&2
+    exit 1
+  fi
 fi
 echo "[bootstrap] python: $PY ($("$PY" --version 2>&1))"
 

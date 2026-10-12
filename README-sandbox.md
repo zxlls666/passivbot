@@ -107,7 +107,7 @@ On the target machine:
 ```bash
 git clone -b local/sandbox git@github.com:zxlls666/passivbot.git passivbot
 cd passivbot
-bash deploy/bootstrap.sh          # pick Python 3.12/3.14, build, then bull-vs-bear backtests
+PYTHON=python3.12 bash deploy/bootstrap.sh   # force 3.12; else it auto-picks 3.12/3.14
 ```
 
 `deploy/bootstrap.sh` uses a supported Python (3.12 or 3.14), installs `passivbot[full]` plus test
