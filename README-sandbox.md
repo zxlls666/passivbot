@@ -91,6 +91,30 @@ git -C /Users/serge/crypto/sandboxes/passivbot reset --hard origin/master
 To select a tagged release or inspect history, unshallow first (`git fetch --unshallow --tags`),
 then update the pin table above.
 
+## Deploy on another machine (e.g. omarchy / Arch)
+
+This machine's network is geo-blocked from Binance/Bybit, so the full backtest comparison is
+meant to run on a host that can reach the exchanges. The sandbox is pushed to a personal fork:
+
+| Item | Value |
+|---|---|
+| Fork | `git@github.com:zxlls666/passivbot.git` |
+| Branch | `local/sandbox` (sandbox dev line; `master` mirrors upstream) |
+| Upstream | `origin` = `git@github.com:enarjord/passivbot.git` (read-only, never push) |
+
+On the target machine:
+
+```bash
+git clone -b local/sandbox git@github.com:zxlls666/passivbot.git passivbot
+cd passivbot
+bash deploy/bootstrap.sh          # pick Python 3.12/3.14, build, then bull-vs-bear backtests
+```
+
+`deploy/bootstrap.sh` uses a supported Python (3.12 or 3.14), installs `passivbot[full]` plus test
+deps into `.venv`, probes exchange reachability, and runs the two comparison windows on a small
+coin basket (override with `COINS=`, `BULL_START=`, `BEAR_START=`, ...). It never runs
+`passivbot live`.
+
 ## Boundaries
 
 See [`AGENTS-sandbox.md`](AGENTS-sandbox.md). In short: no live or authenticated runs, no
