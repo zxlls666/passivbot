@@ -1,0 +1,98 @@
+# Passivbot Sandbox
+
+Independent [Passivbot](https://github.com/enarjord/passivbot) workspace for the `crypto/quant`
+engine — a **third-party bot comparison / strategy-adaptation arm**, the passivbot counterpart of
+`sandboxes/freqtrade` (freqtrade) and `sandboxes/lean` (QuantConnect LEAN).
+
+**Not** connected to the live crypto execution stack. Read-only inspection, backtests, and
+dry-run only. No exchange credentials, no live orders.
+Hard rules: [`AGENTS-sandbox.md`](AGENTS-sandbox.md).
+
+> Naming note: upstream ships `README.md` and `AGENTS.md`, so this sandbox keeps its own docs as
+> `README-sandbox.md` and `AGENTS-sandbox.md` (the macOS filesystem is case-insensitive and would
+> otherwise collide with the upstream files). Upstream's `AGENTS.md` still governs ordinary
+> development *of passivbot*; `AGENTS-sandbox.md` adds this workspace's scope/safety boundary.
+
+## Pin record
+
+| Item | Value |
+|---|---|
+| Upstream | `https://github.com/enarjord/passivbot.git` |
+| Clone type | `--depth 1 --single-branch` (shallow, not a fork) |
+| Branch | `master` |
+| Commit SHA | `82e0edf67a1f037b783d139039021ade8f449478` |
+| Commit date | 2026-10-11 13:38:01 -0400 |
+| Cloned at | 2026-10-12 |
+| Version | `8.2.0.dev0` (unreleased `master`; latest tagged release `v8.1.0`) |
+| License | Unlicense (public domain) |
+| Size on disk | ~31 MB (`~6.2 MB` in `.git`) |
+| Python | `>=3.12,<3.15,!=3.13.*` — Python 3.13 is **not** supported |
+| Rust | toolchain `1.90.0` (`rust-toolchain.toml`); native ext `passivbot_rust` via `setuptools-rust`/`maturin` |
+| Entry point | console script `passivbot` (`passivbot=passivbot_cli.main:console_main`) |
+
+Re-record this table whenever the clone moves — treat each update as a **new comparison batch**.
+
+## Why this exists
+
+| Goal | How |
+|---|---|
+| Engine comparison | Run passivbot backtests on curated OHLCV and diff against `quant` |
+| Strategy port | Port `quant` StrategySpecs onto passivbot configs (`trailing_martingale`, `ema_anchor`) |
+| Tooling evaluation | Assess the optimizer / backtest workflow before deeper investment |
+
+Sibling projects: `../freqtrade/` (IStrategy adapter sandbox), `../lean/` (LEAN engine screening),
+`/Users/serge/crypto/quant` (authoritative research + backtest engine).
+
+## Quick start
+
+Prerequisites: Python 3.12 or 3.14 (not 3.13), a [Rust](https://rustup.rs) toolchain (1.90.0), and
+`maturin`. Install is local-only; nothing here touches an exchange.
+
+```bash
+cd /Users/serge/crypto/sandboxes/passivbot
+
+# one-time setup (local-only venv, gitignored by upstream)
+python3.12 -m venv .venv
+source .venv/bin/activate
+
+# backtesting / optimization / research workstation profile (builds the Rust extension)
+python3 -m pip install -e ".[full]"
+
+# verify the CLI
+passivbot --help
+
+# backtest on an example config (offline data cache, no keys, no orders)
+passivbot backtest configs/examples/default_trailing_martingale_long.json
+```
+
+Live trading (`passivbot live`) is **out of scope** for this sandbox — never run it, and never
+supply credentials, without explicit user approval (see [`AGENTS-sandbox.md`](AGENTS-sandbox.md)).
+
+## Layout
+
+```text
+src/                 # Python: orchestration, exchange I/O, config, data plumbing
+passivbot-rust/      # Rust: order / strategy / risk / unstuck / backtest engine
+configs/examples/    # maintained public example configs
+docs/                # upstream user + AI docs (docs/ai/ holds the contracts)
+tests/ , pytests/    # upstream test suites
+.venv/               # local-only, created by setup (never committed)
+```
+
+## Updating the clone
+
+Shallow clone — fetch newer code and fast-forward:
+
+```bash
+git -C /Users/serge/crypto/sandboxes/passivbot fetch --depth 1 origin master
+git -C /Users/serge/crypto/sandboxes/passivbot reset --hard origin/master
+```
+
+To select a tagged release or inspect history, unshallow first (`git fetch --unshallow --tags`),
+then update the pin table above.
+
+## Boundaries
+
+See [`AGENTS-sandbox.md`](AGENTS-sandbox.md). In short: no live or authenticated runs, no
+credentials, configs stay dry/backtest, `origin` is read-only (never push), and `quant` signal
+logic is never copied into this tree.
